@@ -1,3 +1,4 @@
+import joblib
 import pandas as pd
 from pathlib import Path
 
@@ -45,3 +46,58 @@ def load_csv_df(
     print(f"Dataframe size: {df_memory_usage:.3f}MB")
 
     return df
+
+
+
+def save_processed_artifacts(
+    scaled_df: pd.DataFrame,
+    pca_df: pd.DataFrame,
+    scaler_obj,
+    pca_obj,
+    data_output_path: str | Path,
+    model_output_path: str | Path,
+) -> None:
+    """Save processed dataframes and transformer objects with error handling.
+
+    Firstly creating output directories for data and models by data_output_path
+    and model_output_path arguments (pathlib.Path).
+    Then trying to save dataframes to CSV files and model objects to pickle files.
+
+    1. if saving succeeds:
+        - exports scaled_df and pca_df to CSV files
+        - dumps scaler_obj and pca_obj to pickle files
+        - printing success messages with resolved paths
+    2. otherwise:
+        - printing failure messages
+        - raises error
+
+    function required arguments:
+    1. scaled_df (pd.DataFrame) scaled feature dataframe
+    2. pca_df (pd.DataFrame) PCA transformed feature dataframe
+    3. scaler_obj (object) fitted scaler transformer
+    4. pca_obj (object) fitted PCA transformer
+    5. data_output_path (str / pathlib.Path) directory path for output CSV files
+    6. model_output_path (str / pathlib.Path) directory path for model files
+
+    function returns nothing.
+    """
+
+    try:
+        data_dir = Path(data_output_path)
+        model_dir = Path(model_output_path)
+
+        data_dir.mkdir(parents=True, exist_ok=True)
+        model_dir.mkdir(parents=True, exist_ok=True)
+
+        scaled_df.to_csv(data_dir / "scaled_df.csv", index=False)
+        pca_df.to_csv(data_dir / "pca_df.csv", index=False)
+
+        joblib.dump(scaler_obj, model_dir / "scaler.pkl")
+        joblib.dump(pca_obj, model_dir / "pca.pkl")
+
+        print(f"Data saved to: {data_dir.resolve()}")
+        print(f"Models saved to: {model_dir.resolve()}")
+
+    except Exception as e:
+        print("Failed to save artifacts.")
+        raise e
